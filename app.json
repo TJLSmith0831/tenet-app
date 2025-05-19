@@ -1,0 +1,29 @@
+{
+  "expo": {
+    "name": "Tenet",
+    "slug": "tenet",
+    "version": "1.0.0",
+    "orientation": "portrait",
+    "icon": "./src/assets/echo-icon.png",
+    "userInterfaceStyle": "light",
+    "newArchEnabled": true,
+    "splash": {
+      "image": "./src/assets/echo-icon.png",
+      "resizeMode": "contain",
+      "backgroundColor": "#ffffff"
+    },
+    "ios": {
+      "supportsTablet": true
+    },
+    "android": {
+      "adaptiveIcon": {
+        "foregroundImage": "./src/assets/echo-icon.png",
+        "backgroundColor": "#ffffff"
+      },
+      "edgeToEdgeEnabled": true
+    },
+    "web": {
+      "favicon": "./src/assets/echo-icon.png"
+    }
+  }
+}
