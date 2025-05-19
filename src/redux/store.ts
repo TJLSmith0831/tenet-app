@@ -9,12 +9,18 @@ const authPersistConfig = {
   key: 'auth',
   storage: AsyncStorage,
 };
+const feedPersistConfig = {
+  key: 'feed',
+  storage: AsyncStorage,
+};
 
 export const store = configureStore({
   reducer: {
     // @ts-ignore
     auth: persistReducer(authPersistConfig, authReducer),
-    feed: feedReducer,
+
+    // @ts-ignore
+    feed: persistReducer(feedPersistConfig, feedReducer),
     scroll: scrollReducer,
   },
   devTools: __DEV__,

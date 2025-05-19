@@ -18,6 +18,8 @@ import { auth, functions } from '../../firebase';
 
 // @ts-ignore
 import profanity from 'leo-profanity';
+import { AuthState, setUser } from '../redux/slices/authSlice';
+import { refetchPosts } from '../redux/slices/feedSlice';
 profanity.loadDictionary();
 
 export default function SignupScreen() {
@@ -59,12 +61,7 @@ export default function SignupScreen() {
       ) {
         throw new Error('A valid, non-profane username is required');
       }
-      if (
-        !name ||
-        typeof name !== 'string' ||
-        !/^[a-zA-Z0-9_]+$/.test(name) ||
-        profanity.check(name)
-      ) {
+      if (!name || typeof name !== 'string' || profanity.check(name)) {
         throw new Error('A valid, non-profane name is required');
       }
       if (username.length > 32) {
@@ -81,9 +78,18 @@ export default function SignupScreen() {
 
       // 2. Call your Cloud Function
       const provisionUser = httpsCallable(functions, 'provisionUser');
-      const result: any = await provisionUser({ username, name });
+      const response: any = await provisionUser({ username, name });
 
-      if (result.data?.handle) {
+      // 3. Set user
+      dispatch(setUser(response.data as AuthState));
+
+      // 5. Pull posts
+      await dispatch(refetchPosts());
+
+      // 5. Navigate away
+      navigation.navigate('Home' as never);
+
+      if (response.data?.handle) {
         navigation.navigate('Home' as never);
       } else {
         setError('Signup succeeded, but provisioning failed');
@@ -150,8 +156,8 @@ export default function SignupScreen() {
             label="Name"
             mode="outlined"
             autoCapitalize="none"
-            value={username}
-            onChangeText={setUsername}
+            value={name}
+            onChangeText={setName}
             style={{ marginBottom: 12, overflow: 'hidden' }}
             left={<TextInput.Icon icon="account" />}
           />
