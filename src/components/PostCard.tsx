@@ -31,12 +31,13 @@ import {
   submitReply,
 } from '../services/firebase/postUtils';
 import { auth, db } from '../../firebase';
-import { collection, doc, getDoc, getDocs, orderBy, query } from 'firebase/firestore';
+import { doc, getDoc } from 'firebase/firestore';
 import { useAppDispatch } from '../redux/store';
 import { refetchPosts } from '../redux/slices/feedSlice';
 
 // @ts-ignore
 import profanity from 'leo-profanity';
+import { AnimatedDialog } from './AnimatedDialog';
 profanity.loadDictionary();
 
 /**
@@ -293,164 +294,145 @@ const PostCard = ({ item, isUserPost }: { item: any; isUserPost: boolean }) => {
 
         {isUserPost && <IconButton icon="delete" onPress={() => setShowDeleteConfirm(true)} />}
       </View>
-      <Portal>
-        <Dialog visible={showDeleteConfirm} onDismiss={() => setShowDeleteConfirm(false)}>
-          <Dialog.Title>Confirm Delete</Dialog.Title>
-          <Dialog.Content>
-            <Text>Are you sure you want to delete this post? This action cannot be undone.</Text>
-          </Dialog.Content>
-          <Dialog.Actions>
-            <Button onPress={() => setShowDeleteConfirm(false)}>Cancel</Button>
-            <Button
-              textColor={colors.error}
-              onPress={async () => {
-                try {
-                  await deletePost(item.postId);
-                  setShowDeleteConfirm(false);
-                  dispatch(refetchPosts());
-                } catch (err) {
-                  console.warn('Failed to delete post:', err);
-                  setShowDeleteConfirm(false);
-                }
+      <AnimatedDialog visible={showDeleteConfirm} onDismiss={() => setShowDeleteConfirm(false)}>
+        <Dialog.Title>Confirm Delete</Dialog.Title>
+        <Dialog.Content>
+          <Text>Are you sure you want to delete this post? This action cannot be undone.</Text>
+        </Dialog.Content>
+        <Dialog.Actions>
+          <Button onPress={() => setShowDeleteConfirm(false)}>Cancel</Button>
+          <Button
+            textColor={colors.error}
+            onPress={async () => {
+              try {
+                await deletePost(item.postId);
+                setShowDeleteConfirm(false);
+                dispatch(refetchPosts());
+              } catch (err) {
+                console.warn('Failed to delete post:', err);
+                setShowDeleteConfirm(false);
+              }
+            }}
+          >
+            Delete
+          </Button>
+        </Dialog.Actions>
+      </AnimatedDialog>
+      <AnimatedDialog visible={replyMode} onDismiss={() => setReplyMode(false)} fullscreen>
+        <TouchableWithoutFeedback onPress={Keyboard.dismiss} accessible={false}>
+          <View style={{ height: '100%' }}>
+            <View
+              style={{
+                flexDirection: 'row',
+                justifyContent: 'space-between',
+                alignItems: 'center',
+                marginTop: 10,
+                paddingHorizontal: 24,
+                paddingBottom: 12,
+                width: '100%',
               }}
             >
-              Delete
-            </Button>
-          </Dialog.Actions>
-        </Dialog>
-      </Portal>
-      <Portal>
-        {replyMode && (
-          <TouchableWithoutFeedback onPress={Keyboard.dismiss} accessible={false}>
-            <View style={{ flex: 1 }}>
-              <Dialog
-                visible={replyMode}
-                onDismiss={() => setReplyMode(false)}
-                style={{
-                  flex: 1,
-                  marginTop: 0,
-                  marginBottom: 0,
-                  justifyContent: 'flex-start',
-                  height: '100%',
-                }}
-              >
-                <View
-                  style={{
-                    flexDirection: 'row',
-                    justifyContent: 'space-between',
-                    alignItems: 'center',
-                    paddingHorizontal: 24,
-                    paddingBottom: 12,
-                    width: '100%',
-                  }}
-                >
-                  <Text variant="titleLarge" style={{ flex: 1 }}>
-                    Replies
-                  </Text>
-                  <IconButton
-                    icon="close"
-                    size={24}
-                    onPress={() => setReplyMode(false)}
-                    accessibilityLabel="Close"
-                    style={{ margin: 0 }}
-                  />
-                </View>
-
-                {/* Parent Post Preview */}
-                <Card
-                  style={{
-                    marginBottom: 12,
-                    backgroundColor: colors.surfaceVariant,
-                    width: '90%',
-                    alignSelf: 'center',
-                  }}
-                >
-                  <Card.Title
-                    title={isUserPost ? 'You' : item.authorHandle.replace(`.${TENET_URL}`, '')}
-                    subtitle={formatPostTimestamp(item.createdAt)}
-                  />
-                  <Card.Content>
-                    <Text>{item.content}</Text>
-                  </Card.Content>
-                </Card>
-
-                {/* Replies Section */}
-                <Dialog.ScrollArea style={{ flexGrow: 1, height: '100%' }}>
-                  <Dialog.Content>
-                    {replies.length === 0 ? (
-                      <Text style={{ marginBottom: 12 }}>No replies so far.</Text>
-                    ) : (
-                      replies.map(reply => (
-                        <View key={reply.id} style={{ marginBottom: 8, marginTop: 10 }}>
-                          <Text style={{ fontWeight: 'bold' }}>{reply.authorHandle}</Text>
-                          <Text>{reply.replyText}</Text>
-                          <Divider style={{ marginTop: 6 }} />
-                        </View>
-                      ))
-                    )}
-                  </Dialog.Content>
-                </Dialog.ScrollArea>
-
-                {/* Input */}
-                {!isUserPost && (
-                  <KeyboardAvoidingView
-                    behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
-                    keyboardVerticalOffset={40}
-                  >
-                    {!alreadyReplied && (
-                      <Dialog.Content>
-                        <TextInput
-                          label="Your reply"
-                          value={replyText}
-                          onChangeText={text => {
-                            setReplyText(text.slice(0, 300));
-                            if (text.length > 300) setError('Reply cannot exceed 300 characters.');
-                            else setError('');
-                          }}
-                          multiline
-                          mode="outlined"
-                          error={!!error}
-                        />
-                        <Text style={{ textAlign: 'right', fontSize: 12 }}>
-                          {replyText.length}/300
-                        </Text>
-                        {error && <Text style={{ color: colors.error }}>{error}</Text>}
-                      </Dialog.Content>
-                    )}
-
-                    <Dialog.Actions style={{ justifyContent: 'flex-end' }}>
-                      {!alreadyReplied ? (
-                        <View style={{ flexDirection: 'row', justifyContent: 'flex-end' }}>
-                          <Button onPress={() => setReplyMode(false)}>Cancel</Button>
-                          <Button
-                            onPress={async () => {
-                              const trimmed = replyText.trim();
-                              if (!trimmed) return setError('Reply cannot be empty.');
-                              if (profanity.check(trimmed))
-                                return setError('Please remove profanity.');
-                              await submitReply(item.postId, trimmed);
-                              setReplyText('');
-                              setReplyMode(false);
-                              dispatch(refetchPosts());
-                            }}
-                            disabled={replyText.trim().length === 0 || !!error}
-                          >
-                            Submit
-                          </Button>
-                        </View>
-                      ) : (
-                        <Dialog.Content>
-                          <Text>You Already Replied!</Text>
-                        </Dialog.Content>
-                      )}
-                    </Dialog.Actions>
-                  </KeyboardAvoidingView>
-                )}
-              </Dialog>
+              <Text variant="titleLarge" style={{ flex: 1 }}>
+                Replies
+              </Text>
+              <IconButton
+                icon="close"
+                size={24}
+                onPress={() => setReplyMode(false)}
+                accessibilityLabel="Close"
+                style={{ margin: 0 }}
+              />
             </View>
-          </TouchableWithoutFeedback>
-        )}
-      </Portal>
+
+            {/* Parent Post Preview */}
+            <Card
+              style={{
+                marginHorizontal: 16,
+                marginBottom: 12,
+                backgroundColor: colors.surfaceVariant,
+              }}
+            >
+              <Card.Title
+                title={isUserPost ? 'You' : item.authorHandle.replace(`.${TENET_URL}`, '')}
+                subtitle={formatPostTimestamp(item.createdAt)}
+              />
+              <Card.Content>
+                <Text>{item.content}</Text>
+              </Card.Content>
+            </Card>
+
+            {/* Replies Section */}
+            <Dialog.ScrollArea style={{ flexGrow: 0, height: '100%' }}>
+              <Dialog.Content>
+                {replies.length === 0 ? (
+                  <Text style={{ marginBottom: 12 }}>No replies so far.</Text>
+                ) : (
+                  replies.map(reply => (
+                    <View key={reply.id} style={{ marginBottom: 8, marginTop: 10 }}>
+                      <Text style={{ fontWeight: 'bold' }}>{reply.authorHandle}</Text>
+                      <Text>{reply.replyText}</Text>
+                      <Divider style={{ marginTop: 6 }} />
+                    </View>
+                  ))
+                )}
+              </Dialog.Content>
+            </Dialog.ScrollArea>
+
+            {/* Input */}
+            {!isUserPost && (
+              <KeyboardAvoidingView
+                behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
+                keyboardVerticalOffset={40}
+              >
+                {!alreadyReplied && (
+                  <Dialog.Content>
+                    <TextInput
+                      label="Your reply"
+                      value={replyText}
+                      onChangeText={text => {
+                        setReplyText(text.slice(0, 300));
+                        if (text.length > 300) setError('Reply cannot exceed 300 characters.');
+                        else setError('');
+                      }}
+                      multiline
+                      mode="outlined"
+                      error={!!error}
+                    />
+                    <Text style={{ textAlign: 'right', fontSize: 12 }}>{replyText.length}/300</Text>
+                    {error && <Text style={{ color: colors.error }}>{error}</Text>}
+                  </Dialog.Content>
+                )}
+
+                <Dialog.Actions style={{ justifyContent: 'flex-end' }}>
+                  {!alreadyReplied ? (
+                    <View style={{ flexDirection: 'row', justifyContent: 'flex-end' }}>
+                      <Button onPress={() => setReplyMode(false)}>Cancel</Button>
+                      <Button
+                        onPress={async () => {
+                          const trimmed = replyText.trim();
+                          if (!trimmed) return setError('Reply cannot be empty.');
+                          if (profanity.check(trimmed)) return setError('Please remove profanity.');
+                          await submitReply(item.postId, trimmed);
+                          setReplyText('');
+                          setReplyMode(false);
+                          dispatch(refetchPosts());
+                        }}
+                        disabled={replyText.trim().length === 0 || !!error}
+                      >
+                        Submit
+                      </Button>
+                    </View>
+                  ) : (
+                    <Dialog.Content>
+                      <Text>You Already Replied!</Text>
+                    </Dialog.Content>
+                  )}
+                </Dialog.Actions>
+              </KeyboardAvoidingView>
+            )}
+          </View>
+        </TouchableWithoutFeedback>
+      </AnimatedDialog>
     </Card>
   );
 };
