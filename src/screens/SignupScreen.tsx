@@ -30,6 +30,7 @@ export default function SignupScreen() {
   const [username, setUsername] = useState('');
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
+  const [confirmPassword, setConfirmPassword] = useState('');
   const [showPassword, setShowPassword] = useState(false);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
@@ -70,6 +71,12 @@ export default function SignupScreen() {
       if (name.length > 60) {
         throw new Error('Name is too long');
       }
+
+      // Validate password entries
+      if (password !== confirmPassword && password.length > 0 && confirmPassword.length > 0) {
+        throw new Error('Password entries do not match');
+      }
+
       // 1) Create & sign in the user
       await createUserWithEmailAndPassword(auth, email, password);
 
@@ -146,12 +153,6 @@ export default function SignupScreen() {
             shadowRadius: 24,
           }}
         >
-          <Text
-            variant="titleMedium"
-            style={{ color: colors.secondary, marginBottom: 4, alignSelf: 'center' }}
-          >
-            Make Your Opinions Count
-          </Text>
           <TextInput
             label="Name"
             mode="outlined"
@@ -185,6 +186,21 @@ export default function SignupScreen() {
             secureTextEntry={!showPassword}
             value={password}
             onChangeText={setPassword}
+            style={{ marginBottom: 8, overflow: 'hidden' }}
+            left={<TextInput.Icon icon="lock" />}
+            right={
+              <TextInput.Icon
+                icon={showPassword ? 'eye-off' : 'eye'}
+                onPress={() => setShowPassword(prev => !prev)}
+              />
+            }
+          />
+          <TextInput
+            label="Confirm Password"
+            mode="outlined"
+            secureTextEntry={!showPassword}
+            value={confirmPassword}
+            onChangeText={setConfirmPassword}
             style={{ marginBottom: 8, overflow: 'hidden' }}
             left={<TextInput.Icon icon="lock" />}
             right={

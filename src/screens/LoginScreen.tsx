@@ -114,12 +114,6 @@ export default function LoginScreen() {
             shadowRadius: 24,
           }}
         >
-          <Text
-            variant="titleMedium"
-            style={{ color: colors.secondary, marginBottom: 4, alignSelf: 'center' }}
-          >
-            Continue the Discussion
-          </Text>
           <TextInput
             label="Email"
             mode="outlined"

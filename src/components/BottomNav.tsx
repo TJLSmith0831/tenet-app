@@ -1,6 +1,6 @@
 import React from 'react';
 import { View } from 'react-native';
-import { IconButton, useTheme } from 'react-native-paper';
+import { Icon, IconButton, useTheme } from 'react-native-paper';
 
 export type BottomNavScreen = 'my_feed' | 'create_post' | 'profile';
 
@@ -30,25 +30,31 @@ const BottomNav = ({ focusedScreen, setFocusedScreen }: BottomNavProps) => {
 
   const isFocused = (screen: BottomNavScreen) => focusedScreen === screen;
 
-  const renderNavItem = (icon: string, screenKey: BottomNavScreen, size: number = 24) => {
+  const getIconName = (screenKey: BottomNavScreen) => {
+    switch (screenKey) {
+      case 'my_feed':
+        return isFocused(screenKey) ? 'home' : 'home-outline';
+      case 'create_post':
+        return isFocused(screenKey) ? 'plus-circle' : 'plus-circle-outline';
+      case 'profile':
+        return isFocused(screenKey) ? 'account-circle' : 'account-circle-outline';
+      default:
+        return 'help-circle-outline';
+    }
+  };
+
+  const renderNavItem = (screenKey: BottomNavScreen, size: number = 24) => {
+    const iconName = getIconName(screenKey);
     const color = isFocused(screenKey) ? colors.primary : colors.onSurface;
 
     return (
       <View style={{ alignItems: 'center' }}>
-        <View
-          style={
-            isFocused(screenKey)
-              ? { borderColor: colors.primary, borderWidth: 2, borderRadius: 24, padding: 4 }
-              : {}
-          }
-        >
-          <IconButton
-            icon={icon}
-            size={size}
-            iconColor={color}
-            onPress={() => setFocusedScreen(screenKey)}
-          />
-        </View>
+        <IconButton
+          icon={({ size }) => <Icon source={iconName} size={size} color={color} />}
+          size={size}
+          onPress={() => setFocusedScreen(screenKey)}
+          // mode="outlined"
+        />
       </View>
     );
   };
@@ -66,9 +72,9 @@ const BottomNav = ({ focusedScreen, setFocusedScreen }: BottomNavProps) => {
         backgroundColor: colors.surface,
       }}
     >
-      {renderNavItem('home', 'my_feed')}
-      {renderNavItem('plus-circle-outline', 'create_post', 28)}
-      {renderNavItem('account-circle-outline', 'profile')}
+      {renderNavItem('my_feed')}
+      {renderNavItem('create_post')}
+      {renderNavItem('profile')}
     </View>
   );
 };

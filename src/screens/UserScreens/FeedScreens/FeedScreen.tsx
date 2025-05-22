@@ -6,6 +6,7 @@ import { useAppDispatch, useAppSelector } from '../../../redux/store';
 import { loadMorePosts, refetchPosts, searchPosts } from '../../../redux/slices/feedSlice';
 import TenetSearchBar from '../../../components/TenetSearchBar';
 import { Image } from 'react-native';
+import { TenetLogo } from '../../../assets/logos';
 const SCROLL_SPEED_LIMIT = 5000;
 const REFRESH_TRIGGER_OFFSET = -50;
 
@@ -126,7 +127,7 @@ const FeedScreen = ({ latestPostId }: { latestPostId: string | null }) => {
           justifyContent: 'space-between',
         }}
       >
-        <View style={{ flex: 1, marginLeft: 12 }}>
+        <View style={{ flex: 1 }}>
           <TenetSearchBar
             visible={searchVisible}
             value={searchText}
@@ -139,10 +140,7 @@ const FeedScreen = ({ latestPostId }: { latestPostId: string | null }) => {
             }}
           />
         </View>
-        <Image
-          source={require('../../../assets/tenet-main-logo.png')}
-          style={{ width: 72, height: 72, resizeMode: 'contain' }}
-        />
+        <TenetLogo />
       </View>
 
       {searchMode && (

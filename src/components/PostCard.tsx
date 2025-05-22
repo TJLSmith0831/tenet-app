@@ -260,25 +260,31 @@ const PostCard = ({ item, isUserPost }: { item: any; isUserPost: boolean }) => {
           marginBottom: 8,
         }}
       >
-        <Animated.View
-          style={{ flexDirection: 'row', alignItems: 'center', transform: [{ scale: scaleAnim }] }}
-        >
-          <IconButton
-            icon={hasEchoed ? 'volume-high' : 'volume-off'}
-            iconColor={hasEchoed ? colors.primary : colors.onSurface}
-            size={20}
-            onPress={async () => {
-              const userId = auth.currentUser?.uid;
-              if (!userId) return;
-
-              triggerEchoAnimation();
-              const echoed = await toggleEcho(item.postId, userId);
-              setHasEchoed(echoed);
-              setEchoCount((prev: number) => prev + (echoed ? 1 : -1));
+        {!isUserPost && (
+          <Animated.View
+            style={{
+              flexDirection: 'row',
+              alignItems: 'center',
+              transform: [{ scale: scaleAnim }],
             }}
-          />
-          <Text>{echoCount}</Text>
-        </Animated.View>
+          >
+            <IconButton
+              icon={hasEchoed ? 'volume-high' : 'volume-off'}
+              iconColor={hasEchoed ? colors.primary : colors.onSurface}
+              size={20}
+              onPress={async () => {
+                const userId = auth.currentUser?.uid;
+                if (!userId) return;
+
+                triggerEchoAnimation();
+                const echoed = await toggleEcho(item.postId, userId);
+                setHasEchoed(echoed);
+                setEchoCount((prev: number) => prev + (echoed ? 1 : -1));
+              }}
+            />
+            <Text>{echoCount}</Text>
+          </Animated.View>
+        )}
 
         <View style={{ flexDirection: 'row', alignItems: 'center' }}>
           <IconButton icon="comment-outline" size={20} onPress={() => setReplyMode(true)} />

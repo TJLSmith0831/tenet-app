@@ -100,7 +100,7 @@ export const searchPosts = createAsyncThunk<Post[], string>(
         collection(db, 'posts'),
         where('visibility', '==', 'public'),
         orderBy('createdAt', 'desc'),
-        limit(50),
+        limit(100),
       );
       const snapshot = await getDocs(q);
       const lower = searchText.toLowerCase();
@@ -154,6 +154,12 @@ const feedSlice = createSlice({
         state.loadedPostsNumber += action.payload.length;
       })
       .addCase(loadMorePosts.rejected, (state, action) => {
+        state.error = action.payload as string;
+      })
+      .addCase(searchPosts.fulfilled, (state, action) => {
+        state.posts = action.payload;
+      })
+      .addCase(searchPosts.rejected, (state, action) => {
         state.error = action.payload as string;
       });
   },
