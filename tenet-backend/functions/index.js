@@ -75,8 +75,7 @@ exports.loginUser = onCall(async request => {
   return {
     uid,
     username: userData.username,
-    firstName: userData.firstName,
-    lastName: userData.lastName,
+    name: userData.name,
     handle: userData.handle,
     did: userData.did,
     provisionStatus: userData.provisionStatus,

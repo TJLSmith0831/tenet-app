@@ -1,6 +1,15 @@
 // components/PostCard.tsx
 import { useEffect, useRef, useState } from 'react';
-import { View, Linking, Animated, Easing } from 'react-native';
+import {
+  View,
+  Linking,
+  Animated,
+  Easing,
+  Keyboard,
+  KeyboardAvoidingView,
+  Platform,
+  TouchableWithoutFeedback,
+} from 'react-native';
 import {
   Button,
   Card,
@@ -148,37 +157,17 @@ const PostCard = ({ item, isUserPost }: { item: any; isUserPost: boolean }) => {
   }, []);
 
   const [replyMode, setReplyMode] = useState(false);
-  const [replies, setReplies] = useState<any[]>([]);
+  const [replies, setReplies] = useState<any[]>(item.replies ?? []);
   const [replyText, setReplyText] = useState('');
   const [alreadyReplied, setAlreadyReplied] = useState(true);
   const [error, setError] = useState('');
 
   useEffect(() => {
-    if (!replyMode) return;
-
-    const loadReplies = async () => {
-      const snap = await getDocs(
-        query(collection(db, 'posts', item.postId, 'replies'), orderBy('createdAt', 'asc')),
-      );
-
-      const allReplies = snap.docs.map(doc => {
-        const data = doc.data();
-        return {
-          id: doc.id,
-          userId: data.userId,
-          replyText: data.replyText,
-          authorHandle: data.authorHandle,
-          createdAt: data.createdAt,
-        };
-      });
-
-      setReplies(allReplies);
-      const userId = auth.currentUser?.uid;
-      setAlreadyReplied(allReplies.some(r => r.userId === userId));
-    };
-
-    loadReplies();
-  }, [replyMode]);
+    if (!item.replies) return;
+    setReplies(item.replies);
+    const userId = auth.currentUser?.uid;
+    setAlreadyReplied(item.replies.some((r: any) => r.userId === userId));
+  }, [item.replies]);
 
   const handleAgreementChange = async (value: number) => {
     setUserAgreement(value);
@@ -238,23 +227,23 @@ const PostCard = ({ item, isUserPost }: { item: any; isUserPost: boolean }) => {
           style={{ height: 10, borderRadius: 5, backgroundColor: '#ccc', marginBottom: 12 }}
         />
 
-        {/* {!isUserPost && (
-          <> */}
-        <Text style={{ fontSize: 13, marginBottom: 4 }}>How much do you agree?</Text>
-        <Slider
-          minimumValue={0}
-          maximumValue={100}
-          step={1}
-          value={userAgreement}
-          onValueChange={setUserAgreement}
-          onSlidingComplete={handleAgreementChange}
-          minimumTrackTintColor={colors.primary}
-          maximumTrackTintColor="#ccc"
-          thumbTintColor={colors.primary}
-          style={{ height: 40 }}
-        />
-        {/* </>
-        )} */}
+        {!isUserPost && (
+          <>
+            <Text style={{ fontSize: 13, marginBottom: 4 }}>How much do you agree?</Text>
+            <Slider
+              minimumValue={0}
+              maximumValue={100}
+              step={1}
+              value={userAgreement}
+              onValueChange={setUserAgreement}
+              onSlidingComplete={handleAgreementChange}
+              minimumTrackTintColor={colors.primary}
+              maximumTrackTintColor="#ccc"
+              thumbTintColor={colors.primary}
+              style={{ height: 40 }}
+            />
+          </>
+        )}
 
         <Divider />
       </Card.Content>
@@ -325,89 +314,136 @@ const PostCard = ({ item, isUserPost }: { item: any; isUserPost: boolean }) => {
         </Dialog>
       </Portal>
       <Portal>
-        <Dialog visible={replyMode} onDismiss={() => setReplyMode(false)}>
-          <Dialog.Title>Replies</Dialog.Title>
-
-          {/* Parent Post Preview */}
-          <Card
-            style={{
-              marginBottom: 12,
-              backgroundColor: colors.surfaceVariant,
-              width: '90%',
-              alignSelf: 'center',
-            }}
-          >
-            <Card.Title
-              title={isUserPost ? 'You' : item.authorHandle.replace(`.${TENET_URL}`, '')}
-              subtitle={formatPostTimestamp(item.createdAt)}
-            />
-            <Card.Content>
-              <Text>{item.content}</Text>
-            </Card.Content>
-          </Card>
-          <Dialog.ScrollArea style={{ maxHeight: 500 }}>
-            <Dialog.Content>
-              {/* Replies Section */}
-              {replies.length === 0 ? (
-                <Text style={{ marginBottom: 12 }}>No replies so far.</Text>
-              ) : (
-                replies.map(reply => (
-                  <View key={reply.id} style={{ marginBottom: 8, marginTop: 10 }}>
-                    <Text style={{ fontWeight: 'bold' }}>{reply.authorHandle}</Text>
-                    <Text>{reply.replyText}</Text>
-                    <Divider style={{ marginTop: 6 }} />
-                  </View>
-                ))
-              )}
-            </Dialog.Content>
-          </Dialog.ScrollArea>
-
-          {/* Reply Submission */}
-          {!alreadyReplied && (
-            <Dialog.Content style={{ marginTop: 4 }}>
-              <TextInput
-                label="Your reply"
-                value={replyText}
-                onChangeText={text => {
-                  setReplyText(text.slice(0, 300));
-                  if (text.length > 300) setError('Reply cannot exceed 300 characters.');
-                  else setError('');
+        {replyMode && (
+          <TouchableWithoutFeedback onPress={Keyboard.dismiss} accessible={false}>
+            <View style={{ flex: 1 }}>
+              <Dialog
+                visible={replyMode}
+                onDismiss={() => setReplyMode(false)}
+                style={{
+                  flex: 1,
+                  marginTop: 0,
+                  marginBottom: 0,
+                  justifyContent: 'flex-start',
+                  height: '100%',
                 }}
-                multiline
-                mode="outlined"
-                error={!!error}
-              />
-              <Text style={{ textAlign: 'right', fontSize: 12 }}>{replyText.length}/300</Text>
-              {error && <Text style={{ color: colors.error }}>{error}</Text>}
-            </Dialog.Content>
-          )}
-
-          <Dialog.Actions>
-            {!alreadyReplied ? (
-              <>
-                <Button onPress={() => setReplyMode(false)}>Cancel</Button>
-                <Button
-                  onPress={async () => {
-                    const trimmed = replyText.trim();
-                    if (!trimmed) return setError('Reply cannot be empty.');
-                    if (profanity.check(trimmed)) return setError('Please remove profanity.');
-                    await submitReply(item.postId, trimmed);
-                    setReplyText('');
-                    setReplyMode(false);
-                    dispatch(refetchPosts());
+              >
+                <View
+                  style={{
+                    flexDirection: 'row',
+                    justifyContent: 'space-between',
+                    alignItems: 'center',
+                    paddingHorizontal: 24,
+                    paddingBottom: 12,
+                    width: '100%',
                   }}
-                  disabled={replyText.trim().length === 0 || !!error}
                 >
-                  Submit
-                </Button>
-              </>
-            ) : (
-              <Dialog.Content>
-                <Text>You Already Replied!</Text>
-              </Dialog.Content>
-            )}
-          </Dialog.Actions>
-        </Dialog>
+                  <Text variant="titleLarge" style={{ flex: 1 }}>
+                    Replies
+                  </Text>
+                  <IconButton
+                    icon="close"
+                    size={24}
+                    onPress={() => setReplyMode(false)}
+                    accessibilityLabel="Close"
+                    style={{ margin: 0 }}
+                  />
+                </View>
+
+                {/* Parent Post Preview */}
+                <Card
+                  style={{
+                    marginBottom: 12,
+                    backgroundColor: colors.surfaceVariant,
+                    width: '90%',
+                    alignSelf: 'center',
+                  }}
+                >
+                  <Card.Title
+                    title={isUserPost ? 'You' : item.authorHandle.replace(`.${TENET_URL}`, '')}
+                    subtitle={formatPostTimestamp(item.createdAt)}
+                  />
+                  <Card.Content>
+                    <Text>{item.content}</Text>
+                  </Card.Content>
+                </Card>
+
+                {/* Replies Section */}
+                <Dialog.ScrollArea style={{ flexGrow: 1, height: '100%' }}>
+                  <Dialog.Content>
+                    {replies.length === 0 ? (
+                      <Text style={{ marginBottom: 12 }}>No replies so far.</Text>
+                    ) : (
+                      replies.map(reply => (
+                        <View key={reply.id} style={{ marginBottom: 8, marginTop: 10 }}>
+                          <Text style={{ fontWeight: 'bold' }}>{reply.authorHandle}</Text>
+                          <Text>{reply.replyText}</Text>
+                          <Divider style={{ marginTop: 6 }} />
+                        </View>
+                      ))
+                    )}
+                  </Dialog.Content>
+                </Dialog.ScrollArea>
+
+                {/* Input */}
+                {!isUserPost && (
+                  <KeyboardAvoidingView
+                    behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
+                    keyboardVerticalOffset={40}
+                  >
+                    {!alreadyReplied && (
+                      <Dialog.Content>
+                        <TextInput
+                          label="Your reply"
+                          value={replyText}
+                          onChangeText={text => {
+                            setReplyText(text.slice(0, 300));
+                            if (text.length > 300) setError('Reply cannot exceed 300 characters.');
+                            else setError('');
+                          }}
+                          multiline
+                          mode="outlined"
+                          error={!!error}
+                        />
+                        <Text style={{ textAlign: 'right', fontSize: 12 }}>
+                          {replyText.length}/300
+                        </Text>
+                        {error && <Text style={{ color: colors.error }}>{error}</Text>}
+                      </Dialog.Content>
+                    )}
+
+                    <Dialog.Actions style={{ justifyContent: 'flex-end' }}>
+                      {!alreadyReplied ? (
+                        <View style={{ flexDirection: 'row', justifyContent: 'flex-end' }}>
+                          <Button onPress={() => setReplyMode(false)}>Cancel</Button>
+                          <Button
+                            onPress={async () => {
+                              const trimmed = replyText.trim();
+                              if (!trimmed) return setError('Reply cannot be empty.');
+                              if (profanity.check(trimmed))
+                                return setError('Please remove profanity.');
+                              await submitReply(item.postId, trimmed);
+                              setReplyText('');
+                              setReplyMode(false);
+                              dispatch(refetchPosts());
+                            }}
+                            disabled={replyText.trim().length === 0 || !!error}
+                          >
+                            Submit
+                          </Button>
+                        </View>
+                      ) : (
+                        <Dialog.Content>
+                          <Text>You Already Replied!</Text>
+                        </Dialog.Content>
+                      )}
+                    </Dialog.Actions>
+                  </KeyboardAvoidingView>
+                )}
+              </Dialog>
+            </View>
+          </TouchableWithoutFeedback>
+        )}
       </Portal>
     </Card>
   );

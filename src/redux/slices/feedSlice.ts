@@ -1,7 +1,7 @@
 import { createSlice, createAsyncThunk } from '@reduxjs/toolkit';
 import { collection, getDocs, query, orderBy, limit, startAfter, where } from 'firebase/firestore';
 import { db } from '../../../firebase';
-import { submitPost } from '../../services/firebase/postUtils';
+import { fetchPostWithReplies, submitPost } from '../../services/firebase/postUtils';
 import { NewPostInput, Post } from '../types';
 import { RootState } from '../store';
 
@@ -40,22 +40,19 @@ export const postToFeed = createAsyncThunk<string, NewPostInput>(
 /**
  * Fetches the 50 most recent posts from Firestore.
  */
-export const refetchPosts = createAsyncThunk<Post[]>('feed/refetchPosts', async (_, thunkAPI) => {
-  try {
-    const q = query(collection(db, 'posts'), orderBy('createdAt', 'desc'), limit(50));
-    const snapshot = await getDocs(q);
-
-    const posts: Post[] = snapshot.docs.map(doc => ({
-      postId: doc.id,
-      ...(doc.data() as Omit<Post, 'postId'>),
-    }));
-
-    return posts;
-  } catch (error) {
-    console.error('Failed to fetch posts:', error);
-    return thunkAPI.rejectWithValue('Failed to fetch posts.');
-  }
-});
+export const refetchPosts = createAsyncThunk<Post[]>(
+  'feed/refetchPosts',
+  async (_, { rejectWithValue }) => {
+    try {
+      const q = query(collection(db, 'posts'), orderBy('createdAt', 'desc'), limit(50));
+      const snapshot = await getDocs(q);
+      const posts = await Promise.all(snapshot.docs.map(fetchPostWithReplies));
+      return posts;
+    } catch (error) {
+      return rejectWithValue('Failed to fetch posts');
+    }
+  },
+);
 
 /**
  * Loads the next batch of posts for infinite scroll, starting after the last loaded post.
@@ -80,15 +77,10 @@ export const loadMorePosts = createAsyncThunk<Post[]>(
         limit(50),
       );
       const snapshot = await getDocs(q);
-
-      const posts: Post[] = snapshot.docs.map(doc => ({
-        postId: doc.id,
-        ...(doc.data() as Omit<Post, 'postId'>),
-      }));
-
+      const posts = await Promise.all(snapshot.docs.map(fetchPostWithReplies));
       return posts;
     } catch (error) {
-      return rejectWithValue('Failed to load more posts.');
+      return rejectWithValue('Failed to load more posts');
     }
   },
 );
@@ -102,30 +94,30 @@ export const loadMorePosts = createAsyncThunk<Post[]>(
  */
 export const searchPosts = createAsyncThunk<Post[], string>(
   'feed/searchPosts',
-  async (searchText: string) => {
-    const q = query(
-      collection(db, 'posts'),
-      where('visibility', '==', 'public'),
-      orderBy('createdAt', 'desc'),
-      limit(50),
-    );
-
-    const snapshot = await getDocs(q);
-
-    const lower = searchText.toLowerCase();
-
-    const posts: Post[] = snapshot.docs
-      .map(doc => ({
-        postId: doc.id,
-        ...(doc.data() as Omit<Post, 'postId'>),
-      }))
-      .filter(
-        post =>
-          post.content?.toLowerCase().includes(lower) ||
-          post.authorHandle?.toLowerCase().includes(lower),
+  async (searchText: string, { rejectWithValue }) => {
+    try {
+      const q = query(
+        collection(db, 'posts'),
+        where('visibility', '==', 'public'),
+        orderBy('createdAt', 'desc'),
+        limit(50),
       );
+      const snapshot = await getDocs(q);
+      const lower = searchText.toLowerCase();
 
-    return posts;
+      const filtered = snapshot.docs.filter(doc => {
+        const data = doc.data();
+        return (
+          data.content?.toLowerCase().includes(lower) ||
+          data.authorHandle?.toLowerCase().includes(lower)
+        );
+      });
+
+      const posts = await Promise.all(filtered.map(fetchPostWithReplies));
+      return posts;
+    } catch (error) {
+      return rejectWithValue('Failed to search posts');
+    }
   },
 );
 

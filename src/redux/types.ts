@@ -1,3 +1,5 @@
+import { Timestamp } from '@google-cloud/firestore';
+
 /**
  * Post object stored in Firestore.
  */
@@ -30,9 +32,18 @@ export interface Post {
   hashtags?: string[];
   sourceTitle?: string;
   sourceURL?: string;
+  replies?: Reply[];
 }
 
 export type NewPostInput = Omit<
   Post,
   'postId' | 'createdAt' | 'echoCount' | 'replyCount' | 'avgAgreementScore' | 'userAgreementScore'
 >;
+
+export type Reply = {
+  id: string;
+  userId: string;
+  authorHandle: string;
+  replyText: string;
+  createdAt: Timestamp;
+};

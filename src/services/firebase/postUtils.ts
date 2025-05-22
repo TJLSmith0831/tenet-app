@@ -9,9 +9,11 @@ import {
   getDoc,
   deleteDoc,
   increment,
+  query,
+  orderBy,
 } from 'firebase/firestore';
 import { auth, db } from '../../../firebase';
-import { Post } from '../../redux/types';
+import { Post, Reply } from '../../redux/types';
 
 /**
  * Submits a new post to the Firestore `posts` collection.
@@ -151,4 +153,28 @@ export const submitReply = async (postId: string, replyText: string) => {
     createdAt: serverTimestamp(),
     authorHandle: user.email?.split('@')[0],
   });
+};
+
+/**
+ * Fetches a Post from a Firestore DocumentSnapshot and includes ordered replies.
+ *
+ * @param doc - Firestore post document snapshot
+ * @returns {Promise<Post>} The post object with embedded replies
+ */
+export const fetchPostWithReplies = async (doc: any): Promise<Post> => {
+  const postData = doc.data() as Omit<Post, 'postId' | 'replies'>;
+  const repliesSnap = await getDocs(
+    query(collection(db, 'posts', doc.id, 'replies'), orderBy('createdAt', 'asc')),
+  );
+
+  const replies: Reply[] = repliesSnap.docs.map(replyDoc => ({
+    id: replyDoc.id,
+    ...(replyDoc.data() as Omit<Reply, 'id'>),
+  }));
+
+  return {
+    postId: doc.id,
+    ...postData,
+    replies,
+  };
 };

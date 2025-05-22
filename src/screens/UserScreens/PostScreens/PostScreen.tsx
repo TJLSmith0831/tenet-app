@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Alert, View } from 'react-native';
+import { Alert, Keyboard, TouchableWithoutFeedback, View } from 'react-native';
 import { TextInput, Button, Text, useTheme } from 'react-native-paper';
 
 // @ts-ignore
@@ -136,56 +136,57 @@ const PostScreen = ({ setFocusedScreen }: PostScreenProps) => {
   };
 
   return (
-    <View style={{ flex: 1, backgroundColor: colors.background, padding: 16, marginTop: '10%' }}>
-      <Text variant="titleMedium" style={{ marginBottom: 12 }}>
-        Share your thoughts
-      </Text>
+    <TouchableWithoutFeedback onPress={Keyboard.dismiss} accessible={false}>
+      <View style={{ flex: 1, backgroundColor: colors.background, padding: 16, marginTop: '10%' }}>
+        <Text variant="titleMedium" style={{ marginBottom: 12 }}>
+          Share your thoughts
+        </Text>
 
-      <TextInput
-        mode="outlined"
-        multiline
-        numberOfLines={10}
-        placeholder="What's on your mind?"
-        value={content}
-        onChangeText={setContent}
-        style={{ height: 180, marginBottom: 12 }}
-        autoCapitalize="none"
-      />
-      <Text variant="bodySmall" style={{ alignSelf: 'flex-end', marginBottom: 16 }}>
-        {invalidReason ? `${invalidReason} — ` : ''}
-        {content.length}/300
-      </Text>
-
-      {/* Inline source fields */}
-      <View style={{ flexDirection: 'row', gap: 8, marginBottom: 16 }}>
         <TextInput
           mode="outlined"
-          placeholder="Source title (optional)"
-          value={sourceTitle}
-          onChangeText={setSourceTitle}
-          style={{ flex: 1, fontSize: 14 }}
-          autoCapitalize="none"
+          multiline
+          numberOfLines={10}
+          placeholder="What's on your mind?"
+          value={content}
+          onChangeText={setContent}
+          style={{ height: 180, marginBottom: 12 }}
         />
-        <TextInput
-          mode="outlined"
-          placeholder="Source URL (optional)"
-          value={sourceURL}
-          onChangeText={setSourceURL}
-          keyboardType="url"
-          style={{ flex: 1, fontSize: 14 }}
-          autoCapitalize="none"
-        />
+        <Text variant="bodySmall" style={{ alignSelf: 'flex-end', marginBottom: 16 }}>
+          {invalidReason ? `${invalidReason} — ` : ''}
+          {content.length}/300
+        </Text>
+
+        {/* Inline source fields */}
+        <View style={{ flexDirection: 'row', gap: 8, marginBottom: 16 }}>
+          <TextInput
+            mode="outlined"
+            placeholder="Source title (optional)"
+            value={sourceTitle}
+            onChangeText={setSourceTitle}
+            style={{ flex: 1, fontSize: 14 }}
+            autoCapitalize="none"
+          />
+          <TextInput
+            mode="outlined"
+            placeholder="Source URL (optional)"
+            value={sourceURL}
+            onChangeText={setSourceURL}
+            keyboardType="url"
+            style={{ flex: 1, fontSize: 14 }}
+            autoCapitalize="none"
+          />
+        </View>
+
+        <Button
+          mode="contained"
+          onPress={handlePost}
+          disabled={!isValid || loading}
+          loading={loading}
+        >
+          Post
+        </Button>
       </View>
-
-      <Button
-        mode="contained"
-        onPress={handlePost}
-        disabled={!isValid || loading}
-        loading={loading}
-      >
-        Post
-      </Button>
-    </View>
+    </TouchableWithoutFeedback>
   );
 };
 
