@@ -89,8 +89,10 @@ const ProfileHistory = ({ myPosts }: { myPosts: Post[] }) => {
  *
  * @returns A screen with editable profile details and key metrics.
  */
-const ProfileScreen = ({ user }: { user: AuthState }) => {
+const ProfileScreen = () => {
   const { colors } = useTheme();
+  const user = useAppSelector(state => state.auth.user);
+  if (!user) return;
   const posts = useAppSelector(state => state.feed.posts);
   const myPosts = posts.filter(post => post.authorHandle === user.handle);
   const [settingsVisible, setSettingsVisible] = useState(false);
@@ -113,21 +115,19 @@ const ProfileScreen = ({ user }: { user: AuthState }) => {
     <ScrollView style={{ flex: 1, backgroundColor: colors.background, padding: 16 }}>
       <Appbar.Header style={{ backgroundColor: colors.background }}>
         <Appbar.Content title="Profile" />
-        <Appbar.Action icon="cog" onPress={() => setSettingsVisible(true)} />
+        <Appbar.Action icon="cog" onPress={() => navigation.navigate('ProfileSettings' as never)} />
       </Appbar.Header>
       {/* Profile Header */}
       <View style={{ alignItems: 'center', marginBottom: 24 }}>
-        {/* <Avatar.Image size={100} source={{ uri: profile.photoUrl }} style={{ marginBottom: 12 }} /> */}
-        <Avatar.Text size={100} label="" style={{ backgroundColor: '#e0e0e0', marginBottom: 12 }} />
-
+        <Avatar.Image size={100} source={{ uri: user.avatarUri }} style={{ marginBottom: 12 }} />
         <Text variant="titleMedium">{user.name}</Text>
         <Text variant="titleMedium">{user.handle}</Text>
-        {/* <Text
+        <Text
           variant="bodyMedium"
           style={{ textAlign: 'center', marginTop: 4, color: colors.onSurface }}
         >
           {user.bio}
-        </Text> */}
+        </Text>
       </View>
 
       {/* NumberTiles Section */}
@@ -137,26 +137,6 @@ const ProfileScreen = ({ user }: { user: AuthState }) => {
         {/* <NumberTile label="Scroll Velocity" value={stats.averageScrollVelocity} /> */}
       </View>
       <ProfileHistory myPosts={myPosts} />
-      <Portal>
-        <Dialog visible={settingsVisible} onDismiss={() => setSettingsVisible(false)}>
-          <Dialog.Title>Settings</Dialog.Title>
-          <Dialog.Content>
-            <Text>Manage your account settings below.</Text>
-          </Dialog.Content>
-          <Dialog.Actions>
-            <Button
-              onPress={async () => {
-                await signOut(auth);
-                setSettingsVisible(false);
-                navigation.reset({ index: 0, routes: [{ name: 'Main' as never }] });
-              }}
-            >
-              Logout
-            </Button>
-            <Button onPress={() => setSettingsVisible(false)}>Close</Button>
-          </Dialog.Actions>
-        </Dialog>
-      </Portal>
     </ScrollView>
   );
 };

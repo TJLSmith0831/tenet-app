@@ -11,6 +11,8 @@ export interface AuthState {
   did: string;
   provisionStatus: string;
   createdAt: string; // ISO string
+  bio?: string;
+  avatarUri?: string;
   // Add more fields here if you extend your Cloud Function
 }
 
@@ -39,8 +41,29 @@ const authSlice = createSlice({
     clearUser(state) {
       state.user = null;
     },
+
+    /**
+     * Update a user's profile on the frontend and in Firebase
+     * @param state The AuthState containing the user object
+     * @param action A payload containing information that will  update the user's profile
+     */
+    updateProfile: (
+      state,
+      action: PayloadAction<{
+        name: string;
+        handle: string;
+        bio?: string;
+        avatarUri?: string;
+      }>,
+    ) => {
+      if (!state.user) throw new Error('You cannot update an undefined user');
+      state.user.name = action.payload.name;
+      state.user.handle = action.payload.handle;
+      state.user.bio = action.payload.bio;
+      state.user.avatarUri = action.payload.avatarUri;
+    },
   },
 });
 
-export const { setUser, clearUser } = authSlice.actions;
+export const { setUser, clearUser, updateProfile } = authSlice.actions;
 export default authSlice.reducer;

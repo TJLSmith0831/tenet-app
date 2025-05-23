@@ -12,6 +12,7 @@ import { useFonts, Poppins_700Bold, Poppins_400Regular } from '@expo-google-font
 import { Roboto_400Regular } from '@expo-google-fonts/roboto';
 import { View } from 'react-native';
 import HomeScreen from './screens/UserScreens/HomeScreen';
+import ProfileSettingsScreen from './screens/UserScreens/ProfileScreens/ProfileSettingsScreen';
 
 const { Navigator, Screen } = createNativeStackNavigator();
 
@@ -35,6 +36,11 @@ const App = () => {
             <Screen name="Login" component={LoginScreen} />
             <Screen name="Signup" component={SignupScreen} />
             <Screen name="Home" component={HomeScreen} />
+            <Screen
+              name="ProfileSettings"
+              component={ProfileSettingsScreen}
+              options={{ animation: 'slide_from_right' }}
+            />
           </Navigator>
         </NavigationContainer>
       </PaperProvider>

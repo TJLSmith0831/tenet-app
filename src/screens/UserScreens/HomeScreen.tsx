@@ -39,7 +39,7 @@ const HomeScreen = () => {
       case 'create_post':
         return <PostScreen setFocusedScreen={setFocusedScreen} />;
       case 'profile':
-        return <ProfileScreen user={user} />;
+        return <ProfileScreen />;
       case 'my_feed':
         return <FeedScreen latestPostId={latestPostId} />;
       default:
