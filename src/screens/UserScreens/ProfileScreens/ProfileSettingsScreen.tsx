@@ -16,7 +16,7 @@ import { useAppSelector, useAppDispatch } from '../../../redux/store';
 import * as ImagePicker from 'expo-image-picker';
 import { signOut } from 'firebase/auth';
 import { auth } from '../../../../firebase';
-import { AuthState, updateProfile } from '../../../redux/slices/authSlice';
+import { AuthState, updateUserProfile } from '../../../redux/slices/authSlice';
 
 const ProfileSettingsScreen = () => {
   const { colors } = useTheme();
@@ -48,7 +48,10 @@ const ProfileSettingsScreen = () => {
     setSaving(true);
     try {
       // TODO: upload avatar & persist profile changes
-      dispatch(updateProfile({ name, handle, bio, avatarUri }));
+      await dispatch(
+        updateUserProfile({ userId: user.uid, updates: { name, handle, bio, avatarUri } }),
+      );
+
       navigation.goBack();
     } finally {
       setSaving(false);

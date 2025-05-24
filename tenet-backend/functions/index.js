@@ -77,6 +77,8 @@ exports.loginUser = onCall(async request => {
     username: userData.username,
     name: userData.name,
     handle: userData.handle,
+    bio: userData.bio,
+    avatarUri: userData.avatarUri,
     did: userData.did,
     provisionStatus: userData.provisionStatus,
     createdAt: userData.createdAt.toDate().toISOString(),
