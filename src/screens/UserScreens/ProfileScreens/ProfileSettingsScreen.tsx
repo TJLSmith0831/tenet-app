@@ -12,11 +12,12 @@ import {
 } from 'react-native-paper';
 import { useNavigation } from '@react-navigation/native';
 import { useAppSelector, useAppDispatch } from '../../../redux/store';
-// import { updateProfile } from '../../../redux/slices/authSlice'; // <— patch to your action
 import * as ImagePicker from 'expo-image-picker';
 import { signOut } from 'firebase/auth';
 import { auth } from '../../../../firebase';
 import { AuthState, updateUserProfile } from '../../../redux/slices/authSlice';
+import { KeyboardAwareScrollView } from 'react-native-keyboard-aware-scroll-view';
+import { TENET_URL } from '../../../_const';
 
 const ProfileSettingsScreen = () => {
   const { colors } = useTheme();
@@ -25,7 +26,7 @@ const ProfileSettingsScreen = () => {
   const user = useAppSelector(state => state.auth.user as AuthState); // tweak as needed
 
   const [name, setName] = useState(user.name);
-  const [handle, setHandle] = useState(user.handle);
+  const [handle, setHandle] = useState(user.handle.replace(`.${TENET_URL}`, ''));
   const [bio, setBio] = useState(user.bio ?? '');
   const [avatarUri, setAvatarUri] = useState<string>(user.avatarUri ?? '');
   const [saving, setSaving] = useState(false);
@@ -47,11 +48,12 @@ const ProfileSettingsScreen = () => {
   const onSave = async () => {
     setSaving(true);
     try {
-      // TODO: upload avatar & persist profile changes
       await dispatch(
-        updateUserProfile({ userId: user.uid, updates: { name, handle, bio, avatarUri } }),
+        updateUserProfile({
+          userId: user.uid,
+          updates: { name, handle: `${handle}.${TENET_URL}`, bio, avatarUri },
+        }),
       );
-
       navigation.goBack();
     } finally {
       setSaving(false);
@@ -67,7 +69,13 @@ const ProfileSettingsScreen = () => {
       </Appbar.Header>
 
       {/* —— form ——*/}
-      <View style={{ padding: 16 }}>
+      <KeyboardAwareScrollView
+        contentContainerStyle={{ padding: 24, flex: 1 }}
+        keyboardShouldPersistTaps="handled"
+        enableAutomaticScroll
+        enableOnAndroid
+        extraScrollHeight={40}
+      >
         <View style={{ alignItems: 'center', marginBottom: 24 }}>
           {avatarUri ? (
             <Avatar.Image size={120} source={{ uri: avatarUri }} />
@@ -92,6 +100,7 @@ const ProfileSettingsScreen = () => {
           mode="outlined"
           style={{ marginBottom: 16 }}
           left={<TextInput.Affix text="@" />}
+          right={<TextInput.Affix text={`.${TENET_URL}`} />}
         />
         <HelperText type="info">Handles must be unique and lowercase.</HelperText>
 
@@ -119,7 +128,7 @@ const ProfileSettingsScreen = () => {
         >
           Log out
         </Button>
-      </View>
+      </KeyboardAwareScrollView>
     </View>
   );
 };

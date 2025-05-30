@@ -127,6 +127,14 @@ npm start
 
 ---
 
+## Environment Setup
+
+Create a `.env` file in the root with the following values:
+
+See `.env.example` for structure.
+
+---
+
 ## Development Notes
 
 - Authentication state is managed via Firebase and Redux.
