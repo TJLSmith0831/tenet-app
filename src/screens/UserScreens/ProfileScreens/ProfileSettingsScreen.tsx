@@ -70,7 +70,8 @@ const ProfileSettingsScreen = () => {
 
       {/* —— form ——*/}
       <KeyboardAwareScrollView
-        contentContainerStyle={{ padding: 24, flex: 1 }}
+        style={{ flex: 1 }}
+        contentContainerStyle={{ padding: 24, flexGrow: 1 }}
         keyboardShouldPersistTaps="handled"
         enableAutomaticScroll
         enableOnAndroid
