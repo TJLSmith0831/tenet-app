@@ -9,35 +9,7 @@ import { NewPostInput } from '../../../redux/types';
 import { postToFeed } from '../../../redux/slices/feedSlice';
 import { useAppDispatch, useAppSelector } from '../../../redux/store';
 import { BottomNavScreen } from '../../../components/BottomNav';
-
-const normalizeUrl = (url: string): string => {
-  if (!/^https?:\/\//i.test(url)) {
-    return `https://${url}`;
-  }
-  return url;
-};
-
-const unsafeDomains = ['porn', 'xvideos', 'redtube', 'onlyfans', 'nsfw', 'lush'];
-/**
- * Checks if a given URL points to a known NSFW domain.
- *
- * @param normalizedURL - The URL string to validate
- * @returns true if safe, false if blocked
- */
-const isSafeURL = (normalizedURL: string): boolean => {
-  try {
-    const parsed = new URL(normalizedURL);
-    const hostname = parsed.hostname.toLowerCase();
-
-    return !unsafeDomains.some(blocked => {
-      return (
-        hostname === blocked || hostname === `www.${blocked}` || hostname.endsWith(`.${blocked}`)
-      );
-    });
-  } catch {
-    return false; // invalid URL
-  }
-};
+import { normalizeUrl, isSafeURL } from '../../../utils/url';
 
 type PostScreenProps = {
   setFocusedScreen: (screen: BottomNavScreen) => void;
